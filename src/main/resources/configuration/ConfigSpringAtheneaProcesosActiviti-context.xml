@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans   http://www.springframework.org/schema/beans/spring-beans.xsd">    
+
+  		<!-- ***********RECUERDA**************** -->
+ <!-- ATRIBUTO SCOPE
+  Si defines un BEAN's con  scope="prototype" Spring devolvera una instancia de objeto nueva
+  Si defines un BEAN's con  scope="singleton" Spring devolvera SIEMPRE LA MISMA instancia del objeto.
+  -->  
+
+ <!--
+ 	 Conexiones BBDD Disponibles para el contexto que cubre el presente fichero.   	
+-->
+	<bean id="conexionBDathena" class="com.athenea.pool.conexiones.GeneraConexionBD" 
+		factory-method="createInstance">
+		<constructor-arg name="driverBBDD"    value="org.postgresql.Driver"/>
+		<constructor-arg name="direccionBBDD" value="jdbc:postgresql://127.0.0.1/imagine?"/>
+		<constructor-arg name="userBBDD" 	  value="user=postgres"/>
+		<constructor-arg name="passBBDD" 	  value="password=1234"/>
+	</bean>	 
+	
+	<bean id="conexionBDhades" class="com.athenea.pool.conexiones.GeneraConexionBD"
+		factory-method="createInstance">					
+		<constructor-arg name="driverBBDD"    value="com.mysql.jdbc.Driver"/>
+  <!--
+ telefonica .- jdbc:mysql://10.14.7.66:3306/hades?
+ indra .- jdbc:mysql://10.51.5.218:3306/hades?
+-->		
+		<constructor-arg name="direccionBBDD" value="jdbc:mysql://10.14.7.66:3306/hades?"/>
+		<constructor-arg name="userBBDD" 	  value="user=hades_cons"/>
+		<constructor-arg name="passBBDD" 	  value="password=consulta"/>		
+	</bean>
+
+	<bean id="conexionBDgipe" class="com.athenea.pool.conexiones.GeneraConexionBD"
+		factory-method="createInstance">					
+		<constructor-arg name="driverBBDD"    value="com.mysql.jdbc.Driver"/>
+  <!--  
+ telefonica .- jdbc:mysql://10.51.5.218:3307/gipe?
+ indra .- jdbc:mysql://10.51.5.218:3307/gipe?
+-->				 
+		<constructor-arg name="direccionBBDD" value="jdbc:mysql://10.51.5.218:3307/gipe?"/>
+		<constructor-arg name="userBBDD" 	  value="user=gipe_cons"/>
+		<constructor-arg name="passBBDD" 	  value="password=consulta"/>		
+	</bean>
+
+  <!--
+  		"genericoDesplegarCasosParque.desplegarProcesosService" 
+  		desplegarProcesosService es el BEAN principal al que invocan todos los PROCESOS GENERICOS* 
+  			este servicio tiene dos modos de ejecuccion:
+  				1.- Si el proceso generico que lo esta utilizando informa la variable desplegarProcesosService
+  				en el contexto activiti de dicho proceso , solo ejecutara el proceso activiti que venga informado 
+  				en dicha variable. 
+  				2.- Si el proceso generico que lo esta utilizando NO informa la variable desplegarProcesosService
+  				el servicio invoca mediante este fichero Spring a la rutina calculaProceso definida para ese 
+  				nombreproceso.CalculaProcesos (el valor .CalculaProcesos es fijo) de la cual espera un return:
+  					Map<1String, 2Map<String, Object>>
+  					Donde:
+  						1String .-clave de proceso a ejecutar.
+  						2Map<String, Object> .- HashMap clave-valor de entrada al proceso si es necesaria. 
+  						
+  -->
+			<!-- Informes ITSMs programados a las 13:00 -->  
+  <bean id="desplegarInformesITSMsMedioDia.desplegarProcesosService" 
+  		class="com.athenea.activiti.principal.servicetask.procesogenerico.DesplegarProcesosService" 
+  		scope="prototype"/>
+
+			<!-- Informes ITSMs programados a las 07:45 --> 	
+  <bean id="desplegarInformesITSMsPrimeraHora.desplegarProcesosService" 
+  		class="com.athenea.activiti.principal.servicetask.procesogenerico.DesplegarProcesosService" 
+  		scope="prototype"/>  
+  		
+  <bean id="desplegarCasosParque.desplegarProcesosService" 
+  		class="com.athenea.activiti.principal.servicetask.procesogenerico.DesplegarProcesosService" 
+  		scope="prototype"/>    				
+<!--
+
+  		"CPGenericoCasosParque" 
+  		BEAN asociado al proceso generico de casos de parque, calcula todos los casos de parque dados de alta 
+  		en la BD de Athenea y devuelve la estructura esperada por el BEAN genericoDesplegarProcesos.desplegarProcesosService,
+  		ejecutando todos los casos de parque validos segun la configuracion dada por el usuario. 
+  		Recibe de entrada la conexion con la que debe trabajar. 		  
+  -->  		
+ 	<bean id="desplegarCasosParque.CalculaProcesos" 
+		  class="com.athenea.activiti.principal.servicetask.procesogenerico.calculaprocesos.CPGenericoCasosParque"
+		  scope="prototype">
+	    <property name="conexion" ref="conexionBDathena"/>	   
+	</bean> 
+
+  <!--
+  		BEAN's PROCESO Informes ITSMs
+  -->
+  <bean id="procesoInformesITSMs.cargarDatosHades" 
+  		class="com.athenea.activiti.principal.servicetask.informesITSM.RecuperarDatosHades" 
+  		scope="prototype"/>  
+  <bean id="procesoInformesITSMs.cargarDiarioProgramadoInformes" 
+  		class="com.athenea.activiti.principal.servicetask.informesITSM.CargarDiarioProgramadoInformes" 
+  		scope="prototype"/>
+  <bean id="procesoInformesITSMs.ejecuccionInformesProgramados" 
+  		class="com.athenea.activiti.principal.servicetask.informesITSM.EjecuccionInformesProgramados" 
+  		scope="prototype"/>
+  <bean id="procesoInformesITSMs.enviarCorreoPendiente" 
+  		class="com.athenea.activiti.principal.servicetask.informesITSM.EnviarCorreoPendiente" 
+  		scope="prototype"/>    
+  		
+  <!--
+  		BEAN's PROCESO Casos de Parque.
+  -->
+  <bean id="procesoCasosParque.recuperaDatosCaso" 
+  		class="com.athenea.activiti.principal.servicetask.casosparque.RecuperaDatosCaso" 
+  		scope="prototype"/>
+  <bean id="procesoCasosParque.recuperaDatosATLAS" 
+  		class="com.athenea.activiti.principal.servicetask.casosparque.RecuperaDatosATLAS" 
+  		scope="prototype"/>  
+  <bean id="procesoCasosParque.recuperaDatosBDCC" 
+  		class="com.athenea.activiti.principal.servicetask.casosparque.RecuperaDatosBDCC" 
+  		scope="prototype"/>
+  <bean id="procesoCasosParque.recuperaDatosDT" 
+  		class="com.athenea.activiti.principal.servicetask.casosparque.RecuperaDatosDT" 
+  		scope="prototype"/>    	
+  <bean id="procesoCasosParque.recuperaDatosGMC" 
+  		class="com.athenea.activiti.principal.servicetask.casosparque.RecuperaDatosGMC" 
+  		scope="prototype"/> 
+  <bean id="procesoCasosParque.recuperaDatosMiga" 
+  		class="com.athenea.activiti.principal.servicetask.casosparque.RecuperaDatosMiga" 
+  		scope="prototype"/>   		
+  <bean id="procesoCasosParque.cruceITSM" 
+  		class="com.athenea.activiti.principal.servicetask.casosparque.CruceITSM" 
+  		scope="prototype"/>     
+  <bean id="procesoCasosParque.cruzarPedidos" 
+  		class="com.athenea.activiti.principal.servicetask.casosparque.CruzarPedidos" 
+  		scope="prototype"/>   	
+  <bean id="procesoCasosParque.finProceso" 
+  		class="com.athenea.activiti.principal.servicetask.casosparque.FinProceso" 
+  		scope="prototype"/>     		
+  <bean id="procesoCasosParque.grabarError" 
+  		class="com.athenea.activiti.principal.servicetask.casosparque.GrabarError" 
+  		scope="prototype"/>    			  		
+</beans>
